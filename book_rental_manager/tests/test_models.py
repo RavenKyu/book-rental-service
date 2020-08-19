@@ -6,8 +6,8 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.dialects import sqlite
 
-from book_rental_manager.database import (
-    BaseModel,
+from book_rental_manager.models import (
+    Base,
     Customer,
     Book,
     Rental)
@@ -28,7 +28,7 @@ USERS = (
 class DataBaseTest(unittest.TestCase):
     def setUp(self):
         engine = create_engine('sqlite:///:memory:', echo=False)
-        BaseModel.metadata.create_all(engine)
+        Base.metadata.create_all(engine)
         Session = sessionmaker(bind=engine)
         self.session = Session()
     
@@ -63,13 +63,18 @@ class DataBaseTest(unittest.TestCase):
             .filter_by(author='Manuel Lima')\
             .all()
         self.assertEqual(len(result), 2)
+    
+    def test300_customers_as_dict(self):
+        c = Customer(USERS[0][0], USERS[0][1])
+        print(c.as_dict())
+        self.assertTrue(False)
 
 
 class QueryTest(unittest.TestCase):
     def setUp(self):
         engine = create_engine('sqlite:///:memory:', echo=True)
         Session = sessionmaker(bind=engine)
-        BaseModel.metadata.create_all(engine)
+        Base.metadata.create_all(engine)
         self.session = Session()
         self.add_customers()
         self.add_books()

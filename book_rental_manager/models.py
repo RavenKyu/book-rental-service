@@ -5,6 +5,7 @@ from sqlalchemy.orm import relationship, backref
 
 from book_rental_manager.database import Base
 
+
 class Customer(Base):
     __tablename__ = 'customers'
 
@@ -15,6 +16,9 @@ class Customer(Base):
     def __init__(self, name, phone):
         self.name = name
         self.phone = phone
+
+    def as_dict(self):
+       return {c.name: getattr(self, c.name) for c in self.__table__.columns}
 
     def __repr__(self):
         return f"<Customer('{self.name}', '{self.phone}')>" 
@@ -32,7 +36,9 @@ class Book(Base):
         self.title = title
         self.author = author
         self.publisher = publisher
-
+    
+    def as_dict(self):
+       return {c.name: getattr(self, c.name) for c in self.__table__.columns}
 
     def __repr__(self):
         return f"<Book('{self.title}', '{self.author}', '{self.publisher}'>" 
@@ -56,7 +62,10 @@ class Rental(Base):
         if not rental_start:
             rental_start = int(time.time())
         self.rental_start = int(rental_start)
-    
+
+    def as_dict(self):
+       return {c.name: getattr(self, c.name) for c in self.__table__.columns}
+
     def __repr__(self):
         return f"<Rental({self.book}, '{self.rental_start}', '{self.rental_end}')>" 
 
