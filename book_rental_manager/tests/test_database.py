@@ -27,7 +27,7 @@ USERS = (
 
 class DataBaseTest(unittest.TestCase):
     def setUp(self):
-        engine = create_engine('sqlite:///:memory:', echo=True)
+        engine = create_engine('sqlite:///:memory:', echo=False)
         BaseModel.metadata.create_all(engine)
         Session = sessionmaker(bind=engine)
         self.session = Session()
@@ -130,8 +130,6 @@ class QueryTest(unittest.TestCase):
         self.assertEqual(r[0][0], customer)
 
     def test106_rental_some_books(self):
-        self.test105_rental_some_books()
-
         customer = self.session.query(Customer).filter_by(name='김태진').one()
         
         books = self.session.query(Book)\
@@ -146,13 +144,10 @@ class QueryTest(unittest.TestCase):
         self.session.commit()
 
         r = self.session.query(Rental).filter(Rental.rental_end==0).all()
-        import pprint
-        pprint.pprint([(r.book, r.customer) for r in r])
-        self.assertTrue(False)
-        # self.assertEqual(r[0][0], customer)
+        self.assertEqual(r[0].customer, customer)
 
     
-    def test106_rental_delete_customer(self):
+    def test107_rental_delete_customer(self):
         """책 빌려간 사람이 삭제됐을 경우 렌트 레코드 삭제 
         """
         customer = self.session.query(Customer).filter_by(name='김태진').one()
@@ -174,6 +169,7 @@ class QueryTest(unittest.TestCase):
         self.session.commit()
         r = self.session.query(Rental).filter(Rental.rental_end==0).count()
         self.assertEqual(r, 0)
+
 
 
 
