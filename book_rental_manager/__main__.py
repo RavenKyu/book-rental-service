@@ -2,7 +2,7 @@ import argparse
 
 import faker
 from book_rental_manager.app import app
-from book_rental_manager.database import (init_db, dummy_members)
+from book_rental_manager.database import (init_db, dummy_members, dummy_books)
 
 
 def argument_parser():
@@ -10,6 +10,8 @@ def argument_parser():
 
     sub_parser = parser.add_subparsers(dest='sub_parser')
     init_parser = sub_parser.add_parser('init', help='Initialize database')
+    init_parser.add_argument('-d', '--init-db', action='store_true',
+                             help='initialize database.')
     init_parser.add_argument('-m', '--dummy-members', action='store_true',
                              help='insert dummy members.')
     init_parser.add_argument('-b', '--dummy-books', action='store_true',
@@ -29,10 +31,14 @@ if __name__ == '__main__':
     argspec = parser.parse_args()  
     print(argspec)
     if argspec.sub_parser == 'init':
-        init_db()
+        
+        if argspec.init_db:
+            init_db()
         if argspec.dummy_members:
             dummy_members()
-            
+        if argspec.dummy_books:
+            dummy_books()
+
     elif argspec.sub_parser == 'server':
         app.run(host=argspec.address,
                 port=argspec.port,

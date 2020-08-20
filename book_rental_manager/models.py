@@ -22,7 +22,7 @@ class Customer(Base):
        return {c.name: getattr(self, c.name) for c in self.__table__.columns}
 
     def __repr__(self):
-        return f"<Customer('{self.name}', '{self.phone}')>" 
+        return f"<Customer('{self.name}', {self.phone})>" 
 
 class CustomerFactory(factory.alchemy.SQLAlchemyModelFactory):
     class Meta:
@@ -30,8 +30,8 @@ class CustomerFactory(factory.alchemy.SQLAlchemyModelFactory):
         sqlalchemy_session = db_session
         sqlalchemy_get_or_create = ('name', 'phone')
 
-    name = factory.Faker('name')
-    phone = factory.Faker('msisdn')
+    name = factory.Faker('name', locale='ko_KR')
+    phone = factory.Faker('phone_number', locale='ko_KR')
 
 
 class Book(Base):
@@ -59,9 +59,9 @@ class BookFactory(factory.alchemy.SQLAlchemyModelFactory):
         sqlalchemy_session = db_session
         sqlalchemy_get_or_create = ('title', 'author', 'publisher')
 
-    title = ' '.join(factory.Faker('words', nb=4).generate())
-    author = factory.Faker('name')
-    publisher = factory.Faker('word')
+    title = factory.Faker('catch_phrase', locale='ko_KR')
+    author = factory.Faker('name', locale='ko_KR')
+    publisher = factory.Faker('company', locale='ko_KR')
 
 class Rental(Base):
     __tablename__ = 'rental'

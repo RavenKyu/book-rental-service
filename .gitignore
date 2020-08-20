@@ -140,3 +140,5 @@ cython_debug/
 .python-version
 
 .vscode/settings.json
+
+*.db
