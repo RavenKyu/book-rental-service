@@ -1,9 +1,10 @@
 import time
+import factory
 from sqlalchemy import Column, Integer, String, Unicode
 from sqlalchemy import ForeignKey
 from sqlalchemy.orm import relationship, backref
 
-from book_rental_manager.database import Base
+from book_rental_manager.database import Base, db_session
 
 
 class Customer(Base):
@@ -22,6 +23,15 @@ class Customer(Base):
 
     def __repr__(self):
         return f"<Customer('{self.name}', '{self.phone}')>" 
+
+class CustomerFactory(factory.alchemy.SQLAlchemyModelFactory):
+    class Meta:
+        model = Customer
+        sqlalchemy_session = db_session
+        sqlalchemy_get_or_create = ('name', 'phone')
+
+    name = factory.Faker('name')
+    phone = factory.Faker('msisdn')
 
 
 class Book(Base):
@@ -43,6 +53,15 @@ class Book(Base):
     def __repr__(self):
         return f"<Book('{self.title}', '{self.author}', '{self.publisher}'>" 
 
+class BookFactory(factory.alchemy.SQLAlchemyModelFactory):
+    class Meta:
+        model = Book
+        sqlalchemy_session = db_session
+        sqlalchemy_get_or_create = ('title', 'author', 'publisher')
+
+    title = ' '.join(factory.Faker('words', nb=4).generate())
+    author = factory.Faker('name')
+    publisher = factory.Faker('word')
 
 class Rental(Base):
     __tablename__ = 'rental'

@@ -1,16 +1,21 @@
 import argparse
 
+import faker
 from book_rental_manager.app import app
-from book_rental_manager.database import init_db
+from book_rental_manager.database import (init_db, dummy_members)
 
 
 def argument_parser():
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser('book-rental-manager-api')
 
     sub_parser = parser.add_subparsers(dest='sub_parser')
-    init_parser = sub_parser.add_parser('init', help='Initialize Database')
+    init_parser = sub_parser.add_parser('init', help='Initialize database')
+    init_parser.add_argument('-m', '--dummy-members', action='store_true',
+                             help='insert dummy members.')
+    init_parser.add_argument('-b', '--dummy-books', action='store_true',
+                             help='insert dummy books.')
 
-    run_app = sub_parser.add_parser('server', help='Run the api server')
+    run_app = sub_parser.add_parser('server', help='Run api server')
     run_app.add_argument('-a', '--address', default='localhost', 
                          help='host address')
     run_app.add_argument('-p', '--port', type=int, default=5000, 
@@ -25,6 +30,9 @@ if __name__ == '__main__':
     print(argspec)
     if argspec.sub_parser == 'init':
         init_db()
+        if argspec.dummy_members:
+            dummy_members()
+            
     elif argspec.sub_parser == 'server':
         app.run(host=argspec.address,
                 port=argspec.port,

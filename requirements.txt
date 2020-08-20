@@ -1,3 +1,5 @@
 sqlalchemy
 flask
-flask-restful
+flask_restx
+faker
+factory_boy

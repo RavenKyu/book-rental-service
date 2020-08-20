@@ -6,11 +6,14 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.dialects import sqlite
 
+from book_rental_manager.database import db_session
 from book_rental_manager.models import (
     Base,
     Customer,
     Book,
-    Rental)
+    Rental,
+    CustomerFactory,
+    BookFactory)
 
 CURRENT_PATH = pathlib.Path(pathlib.Path(__file__).resolve()).parent
 with open(str(CURRENT_PATH / pathlib.Path('books.csv')), 'r') as f:
@@ -27,11 +30,11 @@ USERS = (
 
 class DataBaseTest(unittest.TestCase):
     def setUp(self):
-        engine = create_engine('sqlite:///:memory:', echo=False)
-        Base.metadata.create_all(engine)
-        Session = sessionmaker(bind=engine)
-        self.session = Session()
-    
+        self.session = db_session
+
+    def tearDown(self):
+        self.session.rollback()
+
     def test100_customers_tablename(self):
         self.assertEqual('customers', Customer.__tablename__)
 
@@ -72,15 +75,12 @@ class DataBaseTest(unittest.TestCase):
 
 class QueryTest(unittest.TestCase):
     def setUp(self):
-        engine = create_engine('sqlite:///:memory:', echo=True)
-        Session = sessionmaker(bind=engine)
-        Base.metadata.create_all(engine)
-        self.session = Session()
+        self.session = db_session
         self.add_customers()
         self.add_books()
 
     def tearDown(self):
-        return super().tearDown()
+        self.session.rollback()
 
     def add_customers(self):
         for customer in USERS:
@@ -175,7 +175,16 @@ class QueryTest(unittest.TestCase):
         r = self.session.query(Rental).filter(Rental.rental_end==0).count()
         self.assertEqual(r, 0)
 
+    def test500(self):
+        print(Customer.query.all())
 
+        print(CustomerFactory(name='Raven'))
+        print(Customer.query.all())
+        self.assertTrue(False)
+
+    def test600(self):
+        print(BookFactory())
+        self.assertTrue(False)
 
 
 
