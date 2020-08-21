@@ -1,5 +1,7 @@
 import os
 import time
+import random
+import datetime
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
@@ -26,3 +28,25 @@ def dummy_books():
     from book_rental_manager.models import BookFactory
     book = [BookFactory() for _ in range(100)]
     db_session.commit()
+
+def dummy_rental():
+    from book_rental_manager.models import RentalFactory
+    from book_rental_manager.models import CustomerFactory
+    from book_rental_manager.models import BookFactory
+    Book = BookFactory._meta.model
+    Customer = CustomerFactory._meta.model
+    Rental = RentalFactory._meta.model
+
+    for _ in range(1000):
+        book = random.choice(Book.query.filter(Book.rentals==None).all())
+        member = random.choice(Customer.query.all())
+        rental = RentalFactory()
+        rental.book = book
+        rental.customer = member
+        if random.randrange(1, 3) % 2 == 0:
+            rental.rental_end = datetime.datetime.now()
+    db_session.commit()
+    
+
+
+    

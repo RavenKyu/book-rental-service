@@ -2,7 +2,7 @@ import argparse
 
 import faker
 from book_rental_manager.app import app
-from book_rental_manager.database import (init_db, dummy_members, dummy_books)
+from book_rental_manager.database import (init_db, dummy_members, dummy_books, dummy_rental)
 
 
 def argument_parser():
@@ -16,6 +16,8 @@ def argument_parser():
                              help='insert dummy members.')
     init_parser.add_argument('-b', '--dummy-books', action='store_true',
                              help='insert dummy books.')
+    init_parser.add_argument('-r', '--dummy-rental', action='store_true',
+                             help='insert dummy rental.')
 
     run_app = sub_parser.add_parser('server', help='Run api server')
     run_app.add_argument('-a', '--address', default='localhost', 
@@ -38,6 +40,8 @@ if __name__ == '__main__':
             dummy_members()
         if argspec.dummy_books:
             dummy_books()
+        if argspec.dummy_rental:
+            dummy_rental()
 
     elif argspec.sub_parser == 'server':
         app.run(host=argspec.address,

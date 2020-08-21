@@ -127,3 +127,95 @@ class Books(Resource):
         db_session.add(book)
         db_session.commit()
         return None
+
+
+@api.route('/books/<int:book_id>')
+class Books(Resource):
+    def get_a_book(self, book_id):
+        book = Book.query.filter_by(id=book_id).one()
+        return book
+
+    @result
+    def get(self, book_id):
+        book = self.get_a_book(book_id)
+        return book.as_dict()
+
+    @result
+    def patch(self, book_id):
+        args = book_parser.parse_args()
+        book = self.get_a_book(book_id)
+        book.query.update(args)
+        db_session.commit()
+        return None
+
+    @result
+    def delete(self, book_id):
+        book = self.get_a_book(book_id)
+        db_session.delete(book)
+        db_session.commit()
+        return None
+        
+
+rental_parser = reqparse.RequestParser()
+rental_parser.add_argument('book_id', type=int, help="The title of the book", store_missing=False)
+rental_parser.add_argument('customer_id', type=int, help="The author of the book", store_missing=False)
+rental_parser.add_argument('rental_start', type=str, help="Publisher's name", store_missing=False)
+rental_parser.add_argument('rental_end', type=str, help="Publisher's name", store_missing=False)
+
+@api.route('/rentals')
+class Retanls(Resource):
+    @result
+    def get(self):
+        args = rental_parser.parse_args()
+        query = Rental.query
+        columns = get_column_names(Rental)
+        target = ['book_id', 'customer_id']
+
+        for t in target:
+            if not hasattr(args, t):
+                continue
+            query = query.filter_by(**{t:args[t]})
+            del args[t]
+
+        target = set(columns) & set(list(args.keys()))
+        for t in list(target):
+            model = getattr(Rental, t)
+            query = query.filter(model.like(f'%{args[t]}%'))
+        data = query.all()
+        return [c.as_dict() for c in data]
+
+    @result
+    def post(self):
+        request.get_json(force=True)
+        args = rental_parser.parse_args()
+        rental = Rental(**args)
+        db_session.add(rental)
+        db_session.commit()
+        return None
+
+
+@api.route('/rentals/<int:rental_id>')
+class Rentals(Resource):
+    def get_a_rental(self, rental_id):
+        rental = Rental.query.filter_by(id=rental_id).one()
+        return rental
+
+    @result
+    def get(self, rental_id):
+        rental = self.get_a_rental(rental_id)
+        return rental.as_dict()
+
+    @result
+    def patch(self, rental_id):
+        args = rental_parser.parse_args()
+        rental = self.get_a_book(rental_id)
+        rental.query.update(args)
+        db_session.commit()
+        return None
+
+    @result
+    def delete(self, rental_id):
+        rental = self.get_a_book(rental_id)
+        db_session.delete(rental)
+        db_session.commit()
+        return None

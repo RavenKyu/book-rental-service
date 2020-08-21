@@ -13,7 +13,8 @@ from book_rental_manager.models import (
     Book,
     Rental,
     CustomerFactory,
-    BookFactory)
+    BookFactory,
+    RentalFactory)
 
 CURRENT_PATH = pathlib.Path(pathlib.Path(__file__).resolve()).parent
 with open(str(CURRENT_PATH / pathlib.Path('books.csv')), 'r') as f:
@@ -186,6 +187,33 @@ class QueryTest(unittest.TestCase):
         print(BookFactory())
         self.assertTrue(False)
 
+    def test700(self):
+        r = RentalFactory()
+        r.book = BookFactory()
+        r.customer = CustomerFactory()
+        print(r)
+        import datetime
+        r.rental_end = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        print(r)
 
+        self.assertTrue(False)
 
+    def test701(self):
+        b = BookFactory()
+        c = CustomerFactory()
+        self.session.commit()
+        print(b.id)
+        print(c.id)
+        r = RentalFactory()
+        r.book_id = b.id
+        r.customer_id = c.id
+        self.session.commit()
+        print(r.book)
+
+        print(r)
+        import datetime
+        r.rental_end = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        print(r)
+
+        self.assertTrue(False)
 
