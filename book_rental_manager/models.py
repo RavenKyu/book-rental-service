@@ -64,13 +64,15 @@ class BookFactory(factory.alchemy.SQLAlchemyModelFactory):
     author = factory.Faker('name', locale='ko_KR')
     publisher = factory.Faker('company', locale='ko_KR')
 
+
 class Rental(Base):
     __tablename__ = 'rental'
     id = Column(Integer, primary_key=True, autoincrement=True)
     book_id = Column(Integer, ForeignKey(Book.id))
     customer_id = Column(Integer, ForeignKey(Customer.id))
     rental_start = Column(DateTime)
-    rental_end = Column(DateTime, default=datetime.datetime.fromtimestamp(0))
+    rental_end = Column(DateTime, nullable=True)
+
 
     book = relationship("Book", 
         backref=backref("rentals", cascade="all, delete, delete-orphan", foreign_keys='Rental.book_id'))
@@ -82,7 +84,7 @@ class Rental(Base):
         self.rental_start = rental_start
 
     def as_dict(self):
-       return {c.name: str(getattr(self, c.name)) for c in self.__table__.columns}
+       return {c.name: getattr(self, c.name) for c in self.__table__.columns}
 
     def __repr__(self):
         return f"<Rental({self.customer}, {self.book}, '{self.rental_start}', '{self.rental_end}')>" 

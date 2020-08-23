@@ -1,12 +1,14 @@
+import datetime
 from functools import wraps
 
-from flask import Flask, request, make_response
-from flask_restx import Resource, Api, reqparse, abort
+from flask import Flask, request, make_response, jsonify
+from flask_restx import Resource, Api, reqparse, abort, fields
 
+from sqlalchemy import inspect
 from sqlalchemy.orm.exc import (NoResultFound)
 from werkzeug.exceptions import(BadRequest)
 
-from book_rental_manager.database import db_session
+from book_rental_manager.database import db_session, s_session
 from book_rental_manager.models import (Customer, Book, Rental)
 from book_rental_manager.logger import get_logger
 
@@ -17,7 +19,7 @@ api = Api(app)
 
 @app.teardown_request
 def shutdown_session(exception=None):
-    db_session.remove()
+    s_session.remove()
 
 logger = get_logger('API')
 
@@ -30,14 +32,15 @@ def result(f):
     @wraps(f)
     def func(*args, **kwargs):
         try:
-            result = f(*args, **kwargs)
+            r = f(*args, **kwargs)
+            return jsonify(r)
+            # return make_response(jsonify(result), 200)
         except NoResultFound as e:
             logger.exception(msg=str(e), exc_info=e)
             api.abort(404, 'There is not the index')
         except Exception as e:
             logger.exception(msg=str(e), exc_info=e)
             raise
-        return result, 200
     return func
 
 def get_column_names(model):
@@ -162,9 +165,26 @@ rental_parser.add_argument('customer_id', type=int, help="The author of the book
 rental_parser.add_argument('rental_start', type=str, help="Publisher's name", store_missing=False)
 rental_parser.add_argument('rental_end', type=str, help="Publisher's name", store_missing=False)
 
+class DateTimeField(fields.Raw):
+    """
+    데이터 직렬화
+    fields.DateTime에서 datetime 객체를 제대로 파싱하지 못하여 null을
+    리턴. 따로 만들어서 사용
+    """
+    def format(self, value):
+        return value.isoformat() if isinstance(value, datetime.datetime) else None
+
+model_rental = api.model('Rental', {
+    'book_id': fields.Integer,
+    'customer_id': fields.Integer,
+    'rental_start': DateTimeField(attribute='rental_start'),
+    'rental_end': DateTimeField(attribute='rental_end')
+})
+
 @api.route('/rentals')
 class Retanls(Resource):
     @result
+    @api.marshal_with(model_rental)    
     def get(self):
         args = rental_parser.parse_args()
         query = Rental.query
@@ -182,7 +202,7 @@ class Retanls(Resource):
             model = getattr(Rental, t)
             query = query.filter(model.like(f'%{args[t]}%'))
         data = query.all()
-        return [c.as_dict() for c in data]
+        return data
 
     @result
     def post(self):
@@ -201,9 +221,10 @@ class Rentals(Resource):
         return rental
 
     @result
+    @api.marshal_with(model_rental)    
     def get(self, rental_id):
         rental = self.get_a_rental(rental_id)
-        return rental.as_dict()
+        return rental
 
     @result
     def patch(self, rental_id):
