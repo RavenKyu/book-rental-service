@@ -13,19 +13,22 @@ from book_rental_manager.models import (Customer, Book, Rental)
 from book_rental_manager.logger import get_logger
 
 
-
 app = Flask(__name__)
 api = Api(app)
+
 
 @app.teardown_request
 def shutdown_session(exception=None):
     s_session.remove()
 
+
 logger = get_logger('API')
 
 customers_parser = reqparse.RequestParser()
-customers_parser.add_argument('name', type=str, help="Cutomer's name", store_missing=False)
-customers_parser.add_argument('phone', type=str, help="Customer's phone number", store_missing=False)
+customers_parser.add_argument(
+    'name', type=str, help="Cutomer's name", store_missing=False)
+customers_parser.add_argument(
+    'phone', type=str, help="Customer's phone number", store_missing=False)
 
 
 def result(f):
@@ -42,6 +45,7 @@ def result(f):
             logger.exception(msg=str(e), exc_info=e)
             raise
     return func
+
 
 def get_column_names(model):
     columns = [str(x) for x in model.__table__.columns]
@@ -102,9 +106,12 @@ class Customers(Resource):
 
 
 book_parser = reqparse.RequestParser()
-book_parser.add_argument('title', type=str, help="The title of the book", store_missing=False)
-book_parser.add_argument('author', type=str, help="The author of the book", store_missing=False)
-book_parser.add_argument('publisher', type=str, help="Publisher's name", store_missing=False)
+book_parser.add_argument(
+    'title', type=str, help="The title of the book", store_missing=False)
+book_parser.add_argument(
+    'author', type=str, help="The author of the book", store_missing=False)
+book_parser.add_argument('publisher', type=str,
+                         help="Publisher's name", store_missing=False)
 
 
 @api.route('/books')
@@ -157,13 +164,17 @@ class Books(Resource):
         db_session.delete(book)
         db_session.commit()
         return None
-        
+
 
 rental_parser = reqparse.RequestParser()
-rental_parser.add_argument('book_id', type=int, help="The title of the book", store_missing=False)
-rental_parser.add_argument('customer_id', type=int, help="The author of the book", store_missing=False)
-rental_parser.add_argument('rental_start', type=str, help="Publisher's name", store_missing=False)
-rental_parser.add_argument('rental_end', type=str, help="Publisher's name", store_missing=False)
+rental_parser.add_argument('book_id', type=int, help="The title of the book")
+rental_parser.add_argument('customer_id', type=int,
+                           help="The author of the book")
+rental_parser.add_argument('rental_start', type=str, help="Publisher's name")
+rental_parser.add_argument('rental_end', type=str,  help="Publisher's name", store_missing=False)
+rental_parser.add_argument('limit', type=int)
+rental_parser.add_argument('offset', type=int)
+
 
 class DateTimeField(fields.Raw):
     """
@@ -171,36 +182,100 @@ class DateTimeField(fields.Raw):
     fields.DateTime에서 datetime 객체를 제대로 파싱하지 못하여 null을
     리턴. 따로 만들어서 사용
     """
+
     def format(self, value):
         return value.isoformat() if isinstance(value, datetime.datetime) else None
 
+
 model_rental = api.model('Rental', {
+    'id': fields.Integer,
     'book_id': fields.Integer,
     'customer_id': fields.Integer,
     'rental_start': DateTimeField(attribute='rental_start'),
     'rental_end': DateTimeField(attribute='rental_end')
 })
 
+
+def filter_by(query, keyword, arguments):
+   # 검색어 필터링 (WHERE)
+    # id 와 같은 정확한 값을 검색
+    target = {key: value for key, value in
+              zip(keyword, [arguments[x] for x in keyword
+                            if hasattr(arguments, x)])}
+    return query.filter_by(**target)
+
+
+def like(model, query, keyword, arguments):
+    # 검색어 필터링 (LIKE)
+    # 제목 같은 이름 검색
+    columns = get_column_names(model)
+    target = set(columns) & set(list(arguments.keys()))
+    for t in list(target):
+        attribute = getattr(model, t)
+        query = query.filter(attribute.like(f'%{arguments[t]}%'))
+    return query
+
+
+def method_get(model, query, keyword: list, arguments):
+    columns = get_column_names(model)
+
+    # 검색어 필터링 (WHERE)
+    # id 와 같은 정확한 값을 검색
+    target = {key: value for key, value in
+              zip(keyword, [arguments[x] for x in keyword])}
+    query = query.filter_by(**target)
+
+    # 검색어 필터링 (LIKE)
+    # 제목 같은 이름 검색
+    target = set(columns) & set(list(arguments.keys()))
+    for t in list(target):
+        attribute = getattr(model, t)
+        query = query.filter(attribute.like(f'%{arguments[t]}%'))
+
+    if hasattr(arguments, 'limit'):
+        query = query.limit(arguments['limit'])
+        del arguments['limit']
+    if hasattr(arguments, 'offset'):
+        query = query.offset(arguments['offset'])
+        del arguments['offset']
+
+    data = query.all()
+    return data
+
+
 @api.route('/rentals')
 class Retanls(Resource):
     @result
-    @api.marshal_with(model_rental)    
+    @api.marshal_with(model_rental)
     def get(self):
         args = rental_parser.parse_args()
         query = Rental.query
         columns = get_column_names(Rental)
-        target = ['book_id', 'customer_id']
 
+        # WHERE
+        target = ['customer_id', 'book_id']
         for t in target:
-            if not hasattr(args, t):
+            if args[t] is None:
                 continue
-            query = query.filter_by(**{t:args[t]})
-            del args[t]
+            query = query.filter_by(**{t: args[t]})
 
-        target = set(columns) & set(list(args.keys()))
-        for t in list(target):
-            model = getattr(Rental, t)
-            query = query.filter(model.like(f'%{args[t]}%'))
+        # DATE TIME
+        if args['rental_start']:
+            dt = datetime.datetime.fromisoformat(args['rental_start'])
+            query = query.filter(Rental.rental_start >= dt)
+        if hasattr(args, 'rental_end'):
+            if args['rental_end']:
+                dt = datetime.datetime.fromisoformat(args['rental_end'])
+                query = query.filter(Rental.rental_end <= dt)
+            else:
+                query = query.filter_by(rental_end=None)
+
+        # OFFSET/LIMIT
+        if getattr(args, 'limit'):
+            query = query.limit(args['limit'])
+        if getattr(args, 'offset'):
+            query = query.offset(args['offset'])
+            
         data = query.all()
         return data
 
@@ -221,7 +296,7 @@ class Rentals(Resource):
         return rental
 
     @result
-    @api.marshal_with(model_rental)    
+    @api.marshal_with(model_rental)
     def get(self, rental_id):
         rental = self.get_a_rental(rental_id)
         return rental
