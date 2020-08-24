@@ -20,7 +20,8 @@ db_session = s_session()
 
 
 def init_db():
-    os.rename(f'{DB_FILENAME}.db', f'{DB_FILENAME}_{str(int(time.time()))}.db')
+    if os.path.isfile(f'{DB_FILENAME}.db') :
+        os.rename(f'{DB_FILENAME}.db', f'{DB_FILENAME}_{str(int(time.time()))}.db')
     import book_rental_manager.models
     Base.metadata.create_all(bind=engine)
 

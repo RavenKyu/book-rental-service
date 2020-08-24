@@ -1,0 +1,8 @@
+**/.git
+**/.pytest_cache
+**/.python-version
+**/.python.env
+**/.vscode
+**/*.db
+**/.DS_Store
+**/__pycache__

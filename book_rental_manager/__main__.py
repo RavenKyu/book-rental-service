@@ -31,7 +31,7 @@ def argument_parser():
 if __name__ == '__main__':
     parser = argument_parser()
     argspec = parser.parse_args()  
-    print(argspec)
+
     if argspec.sub_parser == 'init':
         
         if argspec.init_db:
