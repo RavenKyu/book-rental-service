@@ -2,10 +2,14 @@
 
 ## 사용법
 ### 설치
-
-### 실행
+`공부 목적이라면 설치를 하지말고 사용할 것.`
 ```bash
-
+python setup.py install
+```
+### 실행
+이 파일(`README.md`)가 있는 위치에서 아래 명령어 실행
+```bash
+python -m book_rental_manager 
 ```
 ```bash
 usage: book-rental-manager-api [-h] {init,server} ...
