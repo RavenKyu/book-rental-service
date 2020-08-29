@@ -1,12 +1,12 @@
 # book-rental-manager-api
 
-## 사용법
-### 설치
+## 설치
 `공부 목적이라면 설치를 하지말고 사용할 것.`
 ```bash
 python setup.py install
 ```
-### 실행
+
+## 실행
 이 파일(`README.md`)가 있는 위치에서 아래 명령어 실행
 ```bash
 python -m book_rental_manager 
@@ -22,6 +22,12 @@ positional arguments:
 optional arguments:
   -h, --help     show this help message and exit
 ```
+
+## Docker 실행
+```bash
+docker run --rm -v $(pwd):/root -p 5000:5000 -d book-rental-api:latest server -a 0.0.0.0 -p 5000 -d
+```
+
 ### initialize db
 ```bash
 # 초기화 명령 도움말 보기
